@@ -32,6 +32,7 @@
         "displayFPS",
         "minBallY",
         "maxBallY",
-        "gameNameText"
+        "gameNameText",
+        "servingPlayer"
     ]
 }
