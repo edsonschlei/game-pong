@@ -27,6 +27,8 @@ local PADDLE_SPEED = 200
 function love.load()
     math.randomseed(os.time())
 
+    love.window.setTitle('Pong')
+
     -- define render style
     love.graphics.setDefaultFilter('nearest', 'nearest')
 
@@ -114,6 +116,8 @@ function love.draw()
     -- it draws the right padle
     paddle2:render()
 
+    displayFPS()
+
     push:apply('end')
 end
 
@@ -146,6 +150,13 @@ function love.update(dt)
     if gameState == 'play' then
         ball:update(dt)
     end
+end
+
+function displayFPS()
+    love.graphics.setColor(0, 1, 0, 1)
+    love.graphics.setFont(smallFont)
+    love.graphics.print('FPS: ' .. tostring(love.timer.getFPS()), 5, 5)
+    love.graphics.setColor(1, 1, 1, 1)
 end
 
 --[[
