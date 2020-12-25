@@ -51,6 +51,14 @@ function love.load()
     smallFont = love.graphics.newFont('04B03.TTF', 8)
     victoryFont = love.graphics.newFont('04B03.TTF', 24)
 
+    -- https://freesound.org/
+    sounds = {
+        ['paddle_hit'] = love.audio.newSource('audios/paddle_hit.wav', 'static'),
+        ['point_scored'] = love.audio.newSource('audios/point_scored.wav', 'static'),
+        ['wall_hit'] = love.audio.newSource('audios/wall_hit.wav', 'static'),
+        ['win_game'] = love.audio.newSource('audios/win_game.wav', 'static')
+    }
+
     -- initial game score
     player1Score = 0
     player2Score = 0
@@ -175,9 +183,11 @@ function love.update(dt)
             gameState = GAME_STATE_SERVE
             ball:reset()
             ball.dx = 100
+            sounds['point_scored']:play()
             if player2Score >= VICTORY_SCORE then
                 gameState = GAME_STATE_VICTORY
                 winningPlayer = 2
+                sounds['win_game']:play()
             end
         end
 
@@ -187,9 +197,11 @@ function love.update(dt)
             gameState = GAME_STATE_SERVE
             ball:reset()
             ball.dx = -100
+            sounds['point_scored']:play()
             if player1Score >= VICTORY_SCORE then
                 gameState = GAME_STATE_VICTORY
                 winningPlayer = 1
+                sounds['win_game']:play()
             end
          end
 
@@ -197,24 +209,28 @@ function love.update(dt)
             -- diflect ball to the right
             ball.dx = -ball.dx
             ball.x = player1.x + player1.width + 1
+            sounds['paddle_hit']:play()
         end
 
         if ball:collides(player2) then
             -- diflect ball to the left
             ball.dx = -ball.dx
             ball.x = player2.x - ball.width -1
+            sounds['paddle_hit']:play()
         end
 
         -- detect top game area
         if ball.y <= minBallY then
             ball.dy = -ball.dy
             ball.y = minBallY + 1
+            sounds['wall_hit']:play()
         end
 
         -- detect collision on the bottom game area
         if ball.y >= maxBallY then
             ball.dy = -ball.dy
             ball.y = maxBallY - 1
+            sounds['wall_hit']:play()
         end
 
         --  update player 1 paddle
