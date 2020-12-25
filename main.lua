@@ -1,3 +1,8 @@
+Class = require 'class'
+push = require 'push'
+
+require 'Ball'
+require 'Paddle'
 
 local WINDOW_WIDTH = 1280
 local WINDOW_HEIGHT = 720
@@ -15,7 +20,6 @@ local BALL_SIZE = 6
 
 local PADDLE_SPEED = 200
 
-local push = require 'push'
 
 --[[
     Load the default values and initial configurations
@@ -33,33 +37,38 @@ function love.load()
         resizable = false
     })
 
+    -- create fonts
     scoreFont = love.graphics.newFont('04B03.TTF', 32)
     smallFont = love.graphics.newFont('04B03.TTF', 8)
 
+    -- initial game score
     player1Score = 0
     player2Score = 0
-
-    gameNamePositionX = 0
-    gameNamePositionY = 0
 
     gameAreaWidth = VIRTUAL_WIDTH - (GAME_AREA_X * 2)
     gameAreaHeight = VIRTUAL_HEIGHT - (GAME_AREA_Y * 2)
 
-    maxPaddleY = VIRTUAL_HEIGHT - (GAME_AREA_Y + PADDLE_HEIGHT)
-    minPaddleY = GAME_AREA_Y
+    local maxPaddleY = VIRTUAL_HEIGHT - (GAME_AREA_Y + PADDLE_HEIGHT)
+    local minPaddleY = GAME_AREA_Y
 
-    leftPaddleY = GAME_AREA_X
-    rightPaddleX = VIRTUAL_WIDTH - (GAME_AREA_X + PADDLE_WIDTH)
+    local leftPaddleX = GAME_AREA_X
+    local rightPaddleX = VIRTUAL_WIDTH - (GAME_AREA_X + PADDLE_WIDTH)
 
     player1ScoreX = VIRTUAL_WIDTH / 2 - 50
     player2ScoreX = VIRTUAL_WIDTH / 2 + 30
     playerScoreY = VIRTUAL_HEIGHT / 3
 
-    player1Y = minPaddleY
-    player2Y = maxPaddleY
+    local player1Y = minPaddleY
+    local player2Y = maxPaddleY
+
+    paddle1 = Paddle(leftPaddleX, player1Y, PADDLE_WIDTH, PADDLE_HEIGHT, minPaddleY, maxPaddleY)
+    paddle2 = Paddle(rightPaddleX, player2Y, PADDLE_WIDTH, PADDLE_HEIGHT, minPaddleY, maxPaddleY)
 
     -- ball intial position
-    ballInitialization()
+    local half_ball = BALL_SIZE / 2
+    local ballX = VIRTUAL_WIDTH / 2 - half_ball
+    local ballY = VIRTUAL_HEIGHT / 2 - half_ball
+    ball = Ball(ballX, ballY, BALL_SIZE, BALL_SIZE)
 
     gameState = 'start'
 
@@ -68,23 +77,8 @@ function love.load()
     local font = love.graphics.getFont()
     local hello_pong = love.graphics.newText(font, "Hello Pong!")
     local hp_tw_half = hello_pong:getWidth() / 2
-    -- print(hp_tw_half)
     gameNamePositionX = VIRTUAL_WIDTH / 2 - hp_tw_half
     gameNamePositionY = 7
-end
-
---[[
-    Init the ball position and move direction
-]]
-function ballInitialization()
-    -- ball intial position
-    local half_ball = BALL_SIZE / 2
-    ballX = VIRTUAL_WIDTH / 2 - half_ball
-    ballY = VIRTUAL_HEIGHT / 2 - half_ball
-
-    -- ball delta X
-    ballDX = math.random(2) == 1 and -100 or 100
-    ballDY = math.random(-50, 50)
 end
 
 --[[
@@ -108,46 +102,50 @@ function love.draw()
         love.graphics.print("Hello Pong - Playing!", gameNamePositionX, gameNamePositionY)
     end
 
-    -- it draws the pong ball
-    love.graphics.rectangle('fill', ballX, ballY, BALL_SIZE, BALL_SIZE)
-
     -- it draws the fame area
     love.graphics.rectangle('line', GAME_AREA_X , GAME_AREA_Y, gameAreaWidth, gameAreaHeight)
 
+    -- it draws the pong ball
+    ball:render()
+
     -- it draws the left padle
-    love.graphics.rectangle('fill', leftPaddleY, player1Y, PADDLE_WIDTH, PADDLE_HEIGHT)
+    paddle1:render()
 
     -- it draws the right padle
-    love.graphics.rectangle('fill', rightPaddleX, player2Y, PADDLE_WIDTH, PADDLE_HEIGHT)
-
+    paddle2:render()
 
     push:apply('end')
 end
 
+--[[
+    Calculate the new state of the game
+]]
 function love.update(dt)
     --  update player 1 paddle
     if love.keyboard.isDown('w') then
-        print('w')
-        player1Y = math.max(minPaddleY, player1Y - PADDLE_SPEED * dt)
+        paddle1.dy = - PADDLE_SPEED
     elseif love.keyboard.isDown('s')  then
-        print('d')
-        player1Y = math.min(maxPaddleY, player1Y + PADDLE_SPEED * dt)
+        paddle1.dy = PADDLE_SPEED
+    else
+        paddle1.dy = 0;
     end
 
     --  update player 2 paddle
     if love.keyboard.isDown('up') then
-        print('up')
-        player2Y = math.max(minPaddleY, player2Y - PADDLE_SPEED * dt)
+        paddle2.dy = - PADDLE_SPEED
     elseif love.keyboard.isDown('down')  then
-        print('down')
-        player2Y = math.min(maxPaddleY, player2Y + PADDLE_SPEED * dt)
+        paddle2.dy = PADDLE_SPEED
+    else
+        paddle2.dy = 0;
     end
 
+    paddle1:update(dt)
+    paddle2:update(dt)
+
+    -- update the ball position
     if gameState == 'play' then
-        ballX = ballX + ballDX * dt
-        ballY = ballY + ballDY * dt
+        ball:update(dt)
     end
-
 end
 
 --[[
@@ -162,7 +160,7 @@ function love.keypressed(key)
             gameState = 'play'
         elseif gameState == 'play' then
             gameState = 'start'
-            ballInitialization()
+            ball:reset()
         end
     end
 end
