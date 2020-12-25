@@ -28,6 +28,7 @@
         "push",
         "paddle1",
         "paddle2",
-        "ball"
+        "ball",
+        "displayFPS"
     ]
 }
