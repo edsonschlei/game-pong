@@ -20,6 +20,10 @@ local BALL_SIZE = 6
 
 local PADDLE_SPEED = 200
 
+local GAME_STATE_START = 'start'
+local GAME_STATE_SERVE = 'serve'
+local GAME_STATE_PLAY = 'play'
+
 
 --[[
     Load the default values and initial configurations
@@ -46,6 +50,9 @@ function love.load()
     -- initial game score
     player1Score = 0
     player2Score = 0
+
+    -- serving player
+    servingPlayer = math.random(2)
 
     gameAreaWidth = VIRTUAL_WIDTH - (GAME_AREA_X * 2)
     gameAreaHeight = VIRTUAL_HEIGHT - (GAME_AREA_Y * 2)
@@ -77,9 +84,13 @@ function love.load()
     local ballY = VIRTUAL_HEIGHT / 2 - half_ball
     ball = Ball(ballX, ballY, BALL_SIZE, BALL_SIZE)
 
-    gameState = 'start'
+    if servingPlayer == 1 then
+        ball.dx = 100
+    else
+        ball.dx = -100
+    end
 
-    gameNameText = 'Pong - Press Enter to Start!'
+    gameState = GAME_STATE_START
 end
 
 --[[
@@ -91,18 +102,27 @@ function love.draw()
     -- it clears the screen with the defined collor
     love.graphics.clear(40 / 255, 45 / 255, 52 / 255, 255 / 255)
 
+    -- it draws the fame area
+    love.graphics.rectangle('line', GAME_AREA_X , GAME_AREA_Y, gameAreaWidth, gameAreaHeight)
+
     -- it shows the name of the game
     love.graphics.setFont(smallFont)
-    love.graphics.print(gameNameText, gameNamePositionX, gameNamePositionY)
-    if gameState == 'start' then
+
+    if gameState == GAME_STATE_START then
+        love.graphics.printf('Welcome to Pong!', 0, 30, VIRTUAL_WIDTH, 'center')
+        love.graphics.printf('Press Enter to choose the serve player', 0, 42, VIRTUAL_WIDTH, 'center')
+    elseif gameState == GAME_STATE_SERVE then
+        love.graphics.printf('Player ' .. tostring(servingPlayer) .. "'s turn!", 0, 30, VIRTUAL_WIDTH, 'center')
+        love.graphics.printf('Press enter to Serve!', 0, 42, VIRTUAL_WIDTH, 'center')
+    end
+
+    -- show score only when the game is stopped
+    if not (gameState == GAME_STATE_PLAY) then
         -- present the game score
         love.graphics.setFont(scoreFont)
         love.graphics.print(player1Score, player1ScoreX, playerScoreY)
         love.graphics.print(player2Score, player2ScoreX, playerScoreY)
     end
-
-    -- it draws the fame area
-    love.graphics.rectangle('line', GAME_AREA_X , GAME_AREA_Y, gameAreaWidth, gameAreaHeight)
 
     -- it draws the pong ball
     ball:render()
@@ -124,19 +144,22 @@ end
 ]]
 function love.update(dt)
 
-    if gameState == 'play' then
-        gameNameText = 'Pong - Playing!'
+    if gameState == GAME_STATE_PLAY then
 
         if ball.x <= paddle1.x then
             player2Score = player2Score + 1
-            gameState = 'start'
+            servingPlayer = 1
+            gameState = GAME_STATE_SERVE
             ball:reset()
+            ball.dx = 100
         end
 
         if ball.x >= paddle2.x + paddle2.width then
             player1Score = player1Score + 1
-            gameState = 'start'
+            servingPlayer = 2
+            gameState = GAME_STATE_SERVE
             ball:reset()
+            ball.dx = -100
         end
 
         if ball:collides(paddle1) then
@@ -181,22 +204,13 @@ function love.update(dt)
             paddle2.dy = 0;
         end
 
+        -- update paddles position
         paddle1:update(dt)
         paddle2:update(dt)
 
-    -- update the ball position
+        -- update the ball position
         ball:update(dt)
-    else
-        gameNameText = 'Pong - Press Enter to Start!'
     end
-
-    -- calculate the game name position
-    love.graphics.setFont(smallFont)
-    local font = love.graphics.getFont()
-    local hello_pong = love.graphics.newText(font, gameNameText)
-    local hp_tw_half = hello_pong:getWidth() / 2
-    gameNamePositionX = VIRTUAL_WIDTH / 2 - hp_tw_half
-    gameNamePositionY = 7
 end
 
 function displayFPS()
@@ -214,8 +228,10 @@ function love.keypressed(key)
         love.event.quit()
     elseif key == 'enter' or key == 'return' then
         -- start the game when enter/return is pressed
-        if gameState == 'start' then
-            gameState = 'play'
+        if gameState == GAME_STATE_START then
+            gameState = GAME_STATE_SERVE
+        elseif gameState == GAME_STATE_SERVE then
+            gameState = GAME_STATE_PLAY
         end
     end
 end
