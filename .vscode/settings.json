@@ -29,6 +29,8 @@
         "paddle1",
         "paddle2",
         "ball",
-        "displayFPS"
+        "displayFPS",
+        "minBallY",
+        "maxBallY"
     ]
 }
