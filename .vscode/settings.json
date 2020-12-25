@@ -17,6 +17,12 @@
         "player2ScoreX",
         "playerScoreY",
         "player1Y",
-        "player2Y"
+        "player2Y",
+        "ballX",
+        "ballY",
+        "ballDX",
+        "ballDY",
+        "gameState",
+        "ballInitialization"
     ]
 }
