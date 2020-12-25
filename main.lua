@@ -5,24 +5,15 @@ local WINDOW_HEIGHT = 720
 local VIRTUAL_WIDTH = 432
 local VIRTUAL_HEIGHT = 243
 
-local GAME_NAME_POSITION_X = 0
-local GAME_NAME_POSITION_Y = 0
-
 local GAME_AREA_Y = 20
 local GAME_AREA_X = 5
-local GAME_AREA_WIDTH = VIRTUAL_WIDTH - (GAME_AREA_X * 2)
-local GAME_AREA_HEIGHT = VIRTUAL_HEIGHT - (GAME_AREA_Y * 2)
 
 local PADDLE_WIDTH = 10
 local PADDLE_HEIGHT = 30
 
-local MAX_PADDLE_Y = VIRTUAL_HEIGHT - (GAME_AREA_Y + PADDLE_HEIGHT)
-local MIN_PADDLE_Y = GAME_AREA_Y
+local BALL_SIZE = 6
 
-local LEFT_PADDLE_X = GAME_AREA_X
-local RIGHT_PADDLE_X = VIRTUAL_WIDTH - (GAME_AREA_X + PADDLE_WIDTH)
-
-local BALL_SIZE = 20
+local PADDLE_SPEED = 200
 
 local push = require 'push'
 
@@ -30,6 +21,7 @@ local push = require 'push'
     Load the default values and initial configurations
 ]]
 function love.load()
+    -- define n
     love.graphics.setDefaultFilter('nearest', 'nearest')
     push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
         fullscreen = false,
@@ -37,15 +29,39 @@ function love.load()
         resizable = false
     })
 
-    local smallFont = love.graphics.newFont('04B03.TTF', 8)
-    love.graphics.setFont(smallFont)
+    scoreFont = love.graphics.newFont('04B03.TTF', 32)
+    smallFont = love.graphics.newFont('04B03.TTF', 8)
 
-    local font = love.graphics.getFont( )
+    player1Score = 0
+    player2Score = 0
+
+    gameNamePositionX = 0
+    gameNamePositionY = 0
+
+    gameAreaWidth = VIRTUAL_WIDTH - (GAME_AREA_X * 2)
+    gameAreaHeight = VIRTUAL_HEIGHT - (GAME_AREA_Y * 2)
+
+    maxPaddleY = VIRTUAL_HEIGHT - (GAME_AREA_Y + PADDLE_HEIGHT)
+    minPaddleY = GAME_AREA_Y
+
+    leftPaddleY = GAME_AREA_X
+    rightPaddleX = VIRTUAL_WIDTH - (GAME_AREA_X + PADDLE_WIDTH)
+
+    player1ScoreX = VIRTUAL_WIDTH / 2 - 50
+    player2ScoreX = VIRTUAL_WIDTH / 2 + 30
+    playerScoreY = VIRTUAL_HEIGHT / 3
+
+    player1Y = minPaddleY
+    player2Y = maxPaddleY
+
+    -- calculate the game name position
+    love.graphics.setFont(smallFont)
+    local font = love.graphics.getFont()
     local hello_pong = love.graphics.newText(font, "Hello Pong!")
     local hp_tw_half = hello_pong:getWidth() / 2
-    print(hp_tw_half)
-    GAME_NAME_POSITION_X = VIRTUAL_WIDTH / 2 - hp_tw_half
-    GAME_NAME_POSITION_Y = 7
+    -- print(hp_tw_half)
+    gameNamePositionX = VIRTUAL_WIDTH / 2 - hp_tw_half
+    gameNamePositionY = 7
 end
 
 --[[
@@ -58,22 +74,48 @@ function love.draw()
     love.graphics.clear(40 / 255, 45 / 255, 52 / 255, 255 / 255)
 
     -- it shows the name of the game
-    love.graphics.print("Hello Pong!", GAME_NAME_POSITION_X, GAME_NAME_POSITION_Y)
+    love.graphics.setFont(smallFont)
+    love.graphics.print("Hello Pong!", gameNamePositionX, gameNamePositionY)
+
+    love.graphics.setFont(scoreFont)
+    love.graphics.print(player1Score, player1ScoreX, playerScoreY)
+    love.graphics.print(player2Score, player2ScoreX, playerScoreY)
 
     -- it draws the pong ball
     local half_ball = BALL_SIZE / 2
     love.graphics.rectangle('fill', VIRTUAL_WIDTH / 2 - half_ball, VIRTUAL_HEIGHT / 2 - half_ball, BALL_SIZE, BALL_SIZE)
 
     -- it draws the fame area
-    love.graphics.rectangle('line', GAME_AREA_X , GAME_AREA_Y, GAME_AREA_WIDTH, GAME_AREA_HEIGHT)
+    love.graphics.rectangle('line', GAME_AREA_X , GAME_AREA_Y, gameAreaWidth, gameAreaHeight)
 
     -- it draws the left padle
-    love.graphics.rectangle('fill', LEFT_PADDLE_X, MIN_PADDLE_Y, PADDLE_WIDTH, PADDLE_HEIGHT)
+    love.graphics.rectangle('fill', leftPaddleY, player1Y, PADDLE_WIDTH, PADDLE_HEIGHT)
 
     -- it draws the right padle
-    love.graphics.rectangle('fill', RIGHT_PADDLE_X, MAX_PADDLE_Y, PADDLE_WIDTH, PADDLE_HEIGHT)
+    love.graphics.rectangle('fill', rightPaddleX, player2Y, PADDLE_WIDTH, PADDLE_HEIGHT)
+
 
     push:apply('end')
+end
+
+function love.update(dt)
+    --  update player 1 paddle
+    if love.keyboard.isDown('w') then
+        print('w')
+        player1Y = player1Y - PADDLE_SPEED * dt
+    elseif love.keyboard.isDown('s')  then
+        print('d')
+        player1Y = player1Y + PADDLE_SPEED * dt
+    end
+
+    --  update player 2 paddle
+    if love.keyboard.isDown('up') then
+        print('up')
+        player2Y = player2Y - PADDLE_SPEED * dt
+    elseif love.keyboard.isDown('down')  then
+        print('down')
+        player2Y = player2Y + PADDLE_SPEED * dt
+    end
 end
 
 --[[
