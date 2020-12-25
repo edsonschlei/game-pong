@@ -20,9 +20,12 @@ local BALL_SIZE = 6
 
 local PADDLE_SPEED = 200
 
+local VICTORY_SCORE = 3
+
 local GAME_STATE_START = 'start'
 local GAME_STATE_SERVE = 'serve'
 local GAME_STATE_PLAY = 'play'
+local GAME_STATE_VICTORY = 'victory'
 
 
 --[[
@@ -46,13 +49,11 @@ function love.load()
     -- create fonts
     scoreFont = love.graphics.newFont('04B03.TTF', 32)
     smallFont = love.graphics.newFont('04B03.TTF', 8)
+    victoryFont = love.graphics.newFont('04B03.TTF', 24)
 
     -- initial game score
     player1Score = 0
     player2Score = 0
-
-    -- serving player
-    servingPlayer = math.random(2)
 
     gameAreaWidth = VIRTUAL_WIDTH - (GAME_AREA_X * 2)
     gameAreaHeight = VIRTUAL_HEIGHT - (GAME_AREA_Y * 2)
@@ -75,8 +76,8 @@ function love.load()
     local player1Y = minPaddleY
     local player2Y = maxPaddleY
 
-    paddle1 = Paddle(leftPaddleX, player1Y, PADDLE_WIDTH, PADDLE_HEIGHT, minPaddleY, maxPaddleY)
-    paddle2 = Paddle(rightPaddleX, player2Y, PADDLE_WIDTH, PADDLE_HEIGHT, minPaddleY, maxPaddleY)
+    player1 = Paddle(leftPaddleX, player1Y, PADDLE_WIDTH, PADDLE_HEIGHT, minPaddleY, maxPaddleY)
+    player2 = Paddle(rightPaddleX, player2Y, PADDLE_WIDTH, PADDLE_HEIGHT, minPaddleY, maxPaddleY)
 
     -- ball intial position
     local half_ball = BALL_SIZE / 2
@@ -84,11 +85,16 @@ function love.load()
     local ballY = VIRTUAL_HEIGHT / 2 - half_ball
     ball = Ball(ballX, ballY, BALL_SIZE, BALL_SIZE)
 
+    -- serving player
+    servingPlayer = math.random(2)
+
     if servingPlayer == 1 then
         ball.dx = 100
     else
         ball.dx = -100
     end
+
+    winningPlayer = 0
 
     gameState = GAME_STATE_START
 end
@@ -105,39 +111,56 @@ function love.draw()
     -- it draws the fame area
     love.graphics.rectangle('line', GAME_AREA_X , GAME_AREA_Y, gameAreaWidth, gameAreaHeight)
 
-    -- it shows the name of the game
-    love.graphics.setFont(smallFont)
-
-    if gameState == GAME_STATE_START then
-        love.graphics.printf('Welcome to Pong!', 0, 30, VIRTUAL_WIDTH, 'center')
-        love.graphics.printf('Press Enter to choose the serve player', 0, 42, VIRTUAL_WIDTH, 'center')
-    elseif gameState == GAME_STATE_SERVE then
-        love.graphics.printf('Player ' .. tostring(servingPlayer) .. "'s turn!", 0, 30, VIRTUAL_WIDTH, 'center')
-        love.graphics.printf('Press enter to Serve!', 0, 42, VIRTUAL_WIDTH, 'center')
-    end
-
-    -- show score only when the game is stopped
-    if not (gameState == GAME_STATE_PLAY) then
-        -- present the game score
-        love.graphics.setFont(scoreFont)
-        love.graphics.print(player1Score, player1ScoreX, playerScoreY)
-        love.graphics.print(player2Score, player2ScoreX, playerScoreY)
-    end
+    -- prints the game state
+    printGameState()
 
     -- it draws the pong ball
     ball:render()
 
     -- it draws the left padle
-    paddle1:render()
+    player1:render()
 
     -- it draws the right padle
-    paddle2:render()
+    player2:render()
 
     -- display FPS
     displayFPS()
 
     push:apply('end')
 end
+
+function printGameState()
+    if gameState == GAME_STATE_START then
+        love.graphics.setFont(smallFont)
+        love.graphics.printf('Welcome to Pong!', 0, 30, VIRTUAL_WIDTH, 'center')
+        love.graphics.printf('Press Enter to choose the serve player', 0, 42, VIRTUAL_WIDTH, 'center')
+    elseif gameState == GAME_STATE_SERVE then
+        love.graphics.setFont(smallFont)
+        love.graphics.printf('Player ' .. tostring(servingPlayer) .. "'s turn!", 0, 30, VIRTUAL_WIDTH, 'center')
+        love.graphics.printf('Press enter to Serve!', 0, 42, VIRTUAL_WIDTH, 'center')
+    elseif gameState == GAME_STATE_VICTORY then
+        love.graphics.setFont(victoryFont)
+        love.graphics.printf('Player ' .. tostring(winningPlayer) .. " wins!", 0, 30, VIRTUAL_WIDTH, 'center')
+        love.graphics.setFont(smallFont)
+        love.graphics.printf('Press enter to restart!', 0, 60, VIRTUAL_WIDTH, 'center')
+    end
+
+    -- show score only when the game is stopped
+    printScore()
+end
+
+function printScore()
+    if not (gameState == GAME_STATE_PLAY) then
+        -- present the game score
+        love.graphics.setFont(scoreFont)
+        love.graphics.print(player1Score, player1ScoreX, playerScoreY)
+        love.graphics.print(player2Score, player2ScoreX, playerScoreY)
+    else
+        love.graphics.setFont(smallFont)
+        love.graphics.printf('Player 1 -> ' .. tostring(player1Score) .. ' x ' .. tostring(player2Score) .. ' <- Player 2', 0, 5, VIRTUAL_WIDTH, 'center')
+    end
+end
+
 
 --[[
     Calculate the new state of the game
@@ -146,32 +169,40 @@ function love.update(dt)
 
     if gameState == GAME_STATE_PLAY then
 
-        if ball.x <= paddle1.x then
+        if ball.x <= player1.x then
             player2Score = player2Score + 1
             servingPlayer = 1
             gameState = GAME_STATE_SERVE
             ball:reset()
             ball.dx = 100
+            if player2Score >= VICTORY_SCORE then
+                gameState = GAME_STATE_VICTORY
+                winningPlayer = 2
+            end
         end
 
-        if ball.x >= paddle2.x + paddle2.width then
+        if ball.x >= player2.x + player2.width then
             player1Score = player1Score + 1
             servingPlayer = 2
             gameState = GAME_STATE_SERVE
             ball:reset()
             ball.dx = -100
-        end
+            if player1Score >= VICTORY_SCORE then
+                gameState = GAME_STATE_VICTORY
+                winningPlayer = 1
+            end
+         end
 
-        if ball:collides(paddle1) then
+        if ball:collides(player1) then
             -- diflect ball to the right
             ball.dx = -ball.dx
-            ball.x = paddle1.x + paddle1.width + 1
+            ball.x = player1.x + player1.width + 1
         end
 
-        if ball:collides(paddle2) then
+        if ball:collides(player2) then
             -- diflect ball to the left
             ball.dx = -ball.dx
-            ball.x = paddle2.x - ball.width -1
+            ball.x = player2.x - ball.width -1
         end
 
         -- detect top game area
@@ -188,25 +219,25 @@ function love.update(dt)
 
         --  update player 1 paddle
         if love.keyboard.isDown('w') then
-            paddle1.dy = - PADDLE_SPEED
+            player1.dy = - PADDLE_SPEED
         elseif love.keyboard.isDown('s')  then
-            paddle1.dy = PADDLE_SPEED
+            player1.dy = PADDLE_SPEED
         else
-            paddle1.dy = 0;
+            player1.dy = 0;
         end
 
         --  update player 2 paddle
         if love.keyboard.isDown('up') then
-            paddle2.dy = - PADDLE_SPEED
+            player2.dy = - PADDLE_SPEED
         elseif love.keyboard.isDown('down')  then
-            paddle2.dy = PADDLE_SPEED
+            player2.dy = PADDLE_SPEED
         else
-            paddle2.dy = 0;
+            player2.dy = 0;
         end
 
         -- update paddles position
-        paddle1:update(dt)
-        paddle2:update(dt)
+        player1:update(dt)
+        player2:update(dt)
 
         -- update the ball position
         ball:update(dt)
@@ -232,6 +263,10 @@ function love.keypressed(key)
             gameState = GAME_STATE_SERVE
         elseif gameState == GAME_STATE_SERVE then
             gameState = GAME_STATE_PLAY
+        elseif gameState == GAME_STATE_VICTORY then
+            gameState = GAME_STATE_START
+            player1Score = 0
+            player2Score = 0
         end
     end
 end
