@@ -13,8 +13,8 @@ local VIRTUAL_HEIGHT = 243
 local GAME_AREA_Y = 20
 local GAME_AREA_X = 5
 
-local PADDLE_WIDTH = 10
-local PADDLE_HEIGHT = 30
+local PADDLE_WIDTH = 5
+local PADDLE_HEIGHT = 20
 
 local BALL_SIZE = 6
 
@@ -49,6 +49,11 @@ function love.load()
 
     gameAreaWidth = VIRTUAL_WIDTH - (GAME_AREA_X * 2)
     gameAreaHeight = VIRTUAL_HEIGHT - (GAME_AREA_Y * 2)
+
+    minBallY = GAME_AREA_Y
+    print('Min Ball Y:' .. tostring(minBallY))
+    maxBallY = VIRTUAL_HEIGHT - GAME_AREA_Y - BALL_SIZE
+    print('Max Ball Y:' .. tostring(maxBallY))
 
     local maxPaddleY = VIRTUAL_HEIGHT - (GAME_AREA_Y + PADDLE_HEIGHT)
     local minPaddleY = GAME_AREA_Y
@@ -116,6 +121,7 @@ function love.draw()
     -- it draws the right padle
     paddle2:render()
 
+    -- display FPS
     displayFPS()
 
     push:apply('end')
@@ -125,6 +131,31 @@ end
     Calculate the new state of the game
 ]]
 function love.update(dt)
+
+    if ball:collides(paddle1) then
+        -- diflect ball to the right
+        ball.dx = -ball.dx
+        ball.x = paddle1.x + paddle1.width + 1
+    end
+
+    if ball:collides(paddle2) then
+        -- diflect ball to the left
+        ball.dx = -ball.dx
+        ball.x = paddle2.x - ball.width -1
+    end
+
+    -- detect top game area
+    if ball.y <= minBallY then
+        ball.dy = -ball.dy
+        ball.y = minBallY + 1
+    end
+
+    -- detect collision on the bottom game area
+    if ball.y >= maxBallY then
+        ball.dy = -ball.dy
+        ball.y = maxBallY - 1
+    end
+
     --  update player 1 paddle
     if love.keyboard.isDown('w') then
         paddle1.dy = - PADDLE_SPEED
