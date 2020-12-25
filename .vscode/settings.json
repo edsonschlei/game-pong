@@ -1,5 +1,22 @@
 {
     "Lua.diagnostics.globals": [
-        "love"
+        "love",
+        "player1Score",
+        "player2Score",
+        "scoreFont",
+        "smallFont",
+        "gameNamePositionX",
+        "gameNamePositionY",
+        "gameAreaWidth",
+        "gameAreaHeight",
+        "maxPaddleY",
+        "minPaddleY",
+        "leftPaddleY",
+        "rightPaddleX",
+        "player1ScoreX",
+        "player2ScoreX",
+        "playerScoreY",
+        "player1Y",
+        "player2Y"
     ]
 }
