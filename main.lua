@@ -21,8 +21,12 @@ local push = require 'push'
     Load the default values and initial configurations
 ]]
 function love.load()
-    -- define n
+    math.randomseed(os.time())
+
+    -- define render style
     love.graphics.setDefaultFilter('nearest', 'nearest')
+
+    -- define virtual screen and window properties
     push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
         fullscreen = false,
         vsync = true,
@@ -54,6 +58,11 @@ function love.load()
     player1Y = minPaddleY
     player2Y = maxPaddleY
 
+    -- ball intial position
+    ballInitialization()
+
+    gameState = 'start'
+
     -- calculate the game name position
     love.graphics.setFont(smallFont)
     local font = love.graphics.getFont()
@@ -62,6 +71,20 @@ function love.load()
     -- print(hp_tw_half)
     gameNamePositionX = VIRTUAL_WIDTH / 2 - hp_tw_half
     gameNamePositionY = 7
+end
+
+--[[
+    Init the ball position and move direction
+]]
+function ballInitialization()
+    -- ball intial position
+    local half_ball = BALL_SIZE / 2
+    ballX = VIRTUAL_WIDTH / 2 - half_ball
+    ballY = VIRTUAL_HEIGHT / 2 - half_ball
+
+    -- ball delta X
+    ballDX = math.random(2) == 1 and -100 or 100
+    ballDY = math.random(-50, 50)
 end
 
 --[[
@@ -75,15 +98,18 @@ function love.draw()
 
     -- it shows the name of the game
     love.graphics.setFont(smallFont)
-    love.graphics.print("Hello Pong!", gameNamePositionX, gameNamePositionY)
-
-    love.graphics.setFont(scoreFont)
-    love.graphics.print(player1Score, player1ScoreX, playerScoreY)
-    love.graphics.print(player2Score, player2ScoreX, playerScoreY)
+    if gameState == 'start' then
+        love.graphics.print("Hello Pong - Press Enter to Start!", gameNamePositionX, gameNamePositionY)
+        -- present the game score
+        love.graphics.setFont(scoreFont)
+        love.graphics.print(player1Score, player1ScoreX, playerScoreY)
+        love.graphics.print(player2Score, player2ScoreX, playerScoreY)
+    elseif gameState == 'play' then
+        love.graphics.print("Hello Pong - Playing!", gameNamePositionX, gameNamePositionY)
+    end
 
     -- it draws the pong ball
-    local half_ball = BALL_SIZE / 2
-    love.graphics.rectangle('fill', VIRTUAL_WIDTH / 2 - half_ball, VIRTUAL_HEIGHT / 2 - half_ball, BALL_SIZE, BALL_SIZE)
+    love.graphics.rectangle('fill', ballX, ballY, BALL_SIZE, BALL_SIZE)
 
     -- it draws the fame area
     love.graphics.rectangle('line', GAME_AREA_X , GAME_AREA_Y, gameAreaWidth, gameAreaHeight)
@@ -102,20 +128,26 @@ function love.update(dt)
     --  update player 1 paddle
     if love.keyboard.isDown('w') then
         print('w')
-        player1Y = player1Y - PADDLE_SPEED * dt
+        player1Y = math.max(minPaddleY, player1Y - PADDLE_SPEED * dt)
     elseif love.keyboard.isDown('s')  then
         print('d')
-        player1Y = player1Y + PADDLE_SPEED * dt
+        player1Y = math.min(maxPaddleY, player1Y + PADDLE_SPEED * dt)
     end
 
     --  update player 2 paddle
     if love.keyboard.isDown('up') then
         print('up')
-        player2Y = player2Y - PADDLE_SPEED * dt
+        player2Y = math.max(minPaddleY, player2Y - PADDLE_SPEED * dt)
     elseif love.keyboard.isDown('down')  then
         print('down')
-        player2Y = player2Y + PADDLE_SPEED * dt
+        player2Y = math.min(maxPaddleY, player2Y + PADDLE_SPEED * dt)
     end
+
+    if gameState == 'play' then
+        ballX = ballX + ballDX * dt
+        ballY = ballY + ballDY * dt
+    end
+
 end
 
 --[[
@@ -124,6 +156,14 @@ end
 function love.keypressed(key)
     if key == 'escape' then
         love.event.quit()
+    elseif key == 'enter' or key == 'return' then
+        -- start the game when enter/return is pressed
+        if gameState == 'start' then
+            gameState = 'play'
+        elseif gameState == 'play' then
+            gameState = 'start'
+            ballInitialization()
+        end
     end
 end
 
