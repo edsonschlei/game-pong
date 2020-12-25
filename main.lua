@@ -79,13 +79,7 @@ function love.load()
 
     gameState = 'start'
 
-    -- calculate the game name position
-    love.graphics.setFont(smallFont)
-    local font = love.graphics.getFont()
-    local hello_pong = love.graphics.newText(font, "Hello Pong!")
-    local hp_tw_half = hello_pong:getWidth() / 2
-    gameNamePositionX = VIRTUAL_WIDTH / 2 - hp_tw_half
-    gameNamePositionY = 7
+    gameNameText = 'Pong - Press Enter to Start!'
 end
 
 --[[
@@ -99,14 +93,12 @@ function love.draw()
 
     -- it shows the name of the game
     love.graphics.setFont(smallFont)
+    love.graphics.print(gameNameText, gameNamePositionX, gameNamePositionY)
     if gameState == 'start' then
-        love.graphics.print("Hello Pong - Press Enter to Start!", gameNamePositionX, gameNamePositionY)
         -- present the game score
         love.graphics.setFont(scoreFont)
         love.graphics.print(player1Score, player1ScoreX, playerScoreY)
         love.graphics.print(player2Score, player2ScoreX, playerScoreY)
-    elseif gameState == 'play' then
-        love.graphics.print("Hello Pong - Playing!", gameNamePositionX, gameNamePositionY)
     end
 
     -- it draws the fame area
@@ -132,55 +124,79 @@ end
 ]]
 function love.update(dt)
 
-    if ball:collides(paddle1) then
-        -- diflect ball to the right
-        ball.dx = -ball.dx
-        ball.x = paddle1.x + paddle1.width + 1
-    end
+    if gameState == 'play' then
+        gameNameText = 'Pong - Playing!'
 
-    if ball:collides(paddle2) then
-        -- diflect ball to the left
-        ball.dx = -ball.dx
-        ball.x = paddle2.x - ball.width -1
-    end
+        if ball.x <= paddle1.x then
+            player2Score = player2Score + 1
+            gameState = 'start'
+            ball:reset()
+        end
 
-    -- detect top game area
-    if ball.y <= minBallY then
-        ball.dy = -ball.dy
-        ball.y = minBallY + 1
-    end
+        if ball.x >= paddle2.x + paddle2.width then
+            player1Score = player1Score + 1
+            gameState = 'start'
+            ball:reset()
+        end
 
-    -- detect collision on the bottom game area
-    if ball.y >= maxBallY then
-        ball.dy = -ball.dy
-        ball.y = maxBallY - 1
-    end
+        if ball:collides(paddle1) then
+            -- diflect ball to the right
+            ball.dx = -ball.dx
+            ball.x = paddle1.x + paddle1.width + 1
+        end
 
-    --  update player 1 paddle
-    if love.keyboard.isDown('w') then
-        paddle1.dy = - PADDLE_SPEED
-    elseif love.keyboard.isDown('s')  then
-        paddle1.dy = PADDLE_SPEED
-    else
-        paddle1.dy = 0;
-    end
+        if ball:collides(paddle2) then
+            -- diflect ball to the left
+            ball.dx = -ball.dx
+            ball.x = paddle2.x - ball.width -1
+        end
 
-    --  update player 2 paddle
-    if love.keyboard.isDown('up') then
-        paddle2.dy = - PADDLE_SPEED
-    elseif love.keyboard.isDown('down')  then
-        paddle2.dy = PADDLE_SPEED
-    else
-        paddle2.dy = 0;
-    end
+        -- detect top game area
+        if ball.y <= minBallY then
+            ball.dy = -ball.dy
+            ball.y = minBallY + 1
+        end
 
-    paddle1:update(dt)
-    paddle2:update(dt)
+        -- detect collision on the bottom game area
+        if ball.y >= maxBallY then
+            ball.dy = -ball.dy
+            ball.y = maxBallY - 1
+        end
+
+        --  update player 1 paddle
+        if love.keyboard.isDown('w') then
+            paddle1.dy = - PADDLE_SPEED
+        elseif love.keyboard.isDown('s')  then
+            paddle1.dy = PADDLE_SPEED
+        else
+            paddle1.dy = 0;
+        end
+
+        --  update player 2 paddle
+        if love.keyboard.isDown('up') then
+            paddle2.dy = - PADDLE_SPEED
+        elseif love.keyboard.isDown('down')  then
+            paddle2.dy = PADDLE_SPEED
+        else
+            paddle2.dy = 0;
+        end
+
+        paddle1:update(dt)
+        paddle2:update(dt)
 
     -- update the ball position
-    if gameState == 'play' then
         ball:update(dt)
+    else
+        gameNameText = 'Pong - Press Enter to Start!'
     end
+
+    -- calculate the game name position
+    love.graphics.setFont(smallFont)
+    local font = love.graphics.getFont()
+    local hello_pong = love.graphics.newText(font, gameNameText)
+    local hp_tw_half = hello_pong:getWidth() / 2
+    gameNamePositionX = VIRTUAL_WIDTH / 2 - hp_tw_half
+    gameNamePositionY = 7
 end
 
 function displayFPS()
@@ -200,9 +216,6 @@ function love.keypressed(key)
         -- start the game when enter/return is pressed
         if gameState == 'start' then
             gameState = 'play'
-        elseif gameState == 'play' then
-            gameState = 'start'
-            ball:reset()
         end
     end
 end
