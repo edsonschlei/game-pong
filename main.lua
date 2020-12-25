@@ -27,6 +27,8 @@ local PADDLE_SPEED = 200
 function love.load()
     math.randomseed(os.time())
 
+    love.window.setTitle('Pong')
+
     -- define render style
     love.graphics.setDefaultFilter('nearest', 'nearest')
 
