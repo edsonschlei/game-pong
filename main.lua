@@ -43,7 +43,7 @@ function love.load()
     push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
         fullscreen = false,
         vsync = true,
-        resizable = false
+        resizable = true
     })
 
     -- create fonts
@@ -105,6 +105,10 @@ function love.load()
     winningPlayer = 0
 
     gameState = GAME_STATE_START
+end
+
+function love.resize(w,h)
+    push:resize(w,h)
 end
 
 --[[
