@@ -23,6 +23,11 @@
         "ballDX",
         "ballDY",
         "gameState",
-        "ballInitialization"
+        "ballInitialization",
+        "Class",
+        "push",
+        "paddle1",
+        "paddle2",
+        "ball"
     ]
 }
