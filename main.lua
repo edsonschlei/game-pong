@@ -1,14 +1,33 @@
+--[[
+    Author: Edson Elmar Schlei
+    edson.schlei@gmail.com
+
+    Originally programmed by Atari in 1972. Features two
+    paddles, controlled by players, with the goal of getting
+    the ball past your opponent's edge. First to 10 points wins.
+
+    This version is built to more closely resemble the NES than
+    the original Pong machines or the Atari 2600 in terms of
+    resolution, though in widescreen (16:9) so it looks nicer on
+    modern systems.
+]]
+
 Class = require 'class'
 push = require 'push'
 
 require 'Ball'
 require 'Paddle'
+require 'PlayerIA'
+
+local AUTHOR_NAME = 'Edson Schlei'
+local AUTHOR_EMAIL = '(edson.schlei@gmail.com)'
+local GAME_VERSION = '1.10'
 
 local WINDOW_WIDTH = 1280
 local WINDOW_HEIGHT = 720
 
-local VIRTUAL_WIDTH = 432
-local VIRTUAL_HEIGHT = 243
+VIRTUAL_WIDTH = 432
+VIRTUAL_HEIGHT = 243
 
 local GAME_AREA_Y = 20
 local GAME_AREA_X = 5
@@ -18,9 +37,9 @@ local PADDLE_HEIGHT = 20
 
 local BALL_SIZE = 6
 
-local PADDLE_SPEED = 200
+PADDLE_SPEED = 200
 
-local VICTORY_SCORE = 3
+local VICTORY_SCORE = 10
 
 local GAME_STATE_START = 'start'
 local GAME_STATE_SERVE = 'serve'
@@ -93,6 +112,8 @@ function love.load()
     local ballY = VIRTUAL_HEIGHT / 2 - half_ball
     ball = Ball(ballX, ballY, BALL_SIZE, BALL_SIZE)
 
+    playerIA = PlayerIA(player2, ball)
+
     -- serving player
     servingPlayer = math.random(2)
 
@@ -138,6 +159,9 @@ function love.draw()
     -- display FPS
     displayFPS()
 
+    -- draw author name
+    drawAuthorAndVersion()
+
     push:apply('end')
 end
 
@@ -145,7 +169,7 @@ function printGameState()
     if gameState == GAME_STATE_START then
         love.graphics.setFont(smallFont)
         love.graphics.printf('Welcome to Pong!', 0, 30, VIRTUAL_WIDTH, 'center')
-        love.graphics.printf('Press Enter to choose the serve player', 0, 42, VIRTUAL_WIDTH, 'center')
+        love.graphics.printf('Press Enter to choose the serve player!', 0, 42, VIRTUAL_WIDTH, 'center')
     elseif gameState == GAME_STATE_SERVE then
         love.graphics.setFont(smallFont)
         love.graphics.printf('Player ' .. tostring(servingPlayer) .. "'s turn!", 0, 30, VIRTUAL_WIDTH, 'center')
@@ -211,16 +235,30 @@ function love.update(dt)
 
         if ball:collides(player1) then
             -- diflect ball to the right
-            ball.dx = -ball.dx
-            ball.x = player1.x + player1.width + 1
             sounds['paddle_hit']:play()
+            ball.dx = -ball.dx * 1.03
+            ball.x = player1.x + player1.width + 1
+
+            -- keep velocity going in the same direction, but randomize it
+            if ball.dy < 0 then
+                ball.dy = -math.random(10, 150)
+            else
+                ball.dy = math.random(10, 150)
+            end
         end
 
         if ball:collides(player2) then
             -- diflect ball to the left
+            sounds['paddle_hit']:play()
             ball.dx = -ball.dx
             ball.x = player2.x - ball.width -1
-            sounds['paddle_hit']:play()
+
+            -- keep velocity going in the same direction, but randomize it
+            if ball.dy < 0 then
+                ball.dy = -math.random(10, 150)
+            else
+                ball.dy = math.random(10, 150)
+            end
         end
 
         -- detect top game area
@@ -247,13 +285,7 @@ function love.update(dt)
         end
 
         --  update player 2 paddle
-        if love.keyboard.isDown('up') then
-            player2.dy = - PADDLE_SPEED
-        elseif love.keyboard.isDown('down')  then
-            player2.dy = PADDLE_SPEED
-        else
-            player2.dy = 0;
-        end
+        playerIA:update(dt)
 
         -- update paddles position
         player1:update(dt)
@@ -281,6 +313,14 @@ function love.keypressed(key)
         -- start the game when enter/return is pressed
         if gameState == GAME_STATE_START then
             gameState = GAME_STATE_SERVE
+            -- before switching to play, initialize ball's velocity based
+            -- on player who last scored
+            ball.dy = math.random(-50, 50)
+            if servingPlayer == 1 then
+                ball.dx = math.random(140, 200)
+            else
+                ball.dx = -math.random(140, 200)
+            end
         elseif gameState == GAME_STATE_SERVE then
             gameState = GAME_STATE_PLAY
         elseif gameState == GAME_STATE_VICTORY then
@@ -291,3 +331,10 @@ function love.keypressed(key)
     end
 end
 
+function drawAuthorAndVersion()
+    love.graphics.setColor(0, 1, 0, 1)
+    love.graphics.setFont(smallFont)
+    love.graphics.printf(AUTHOR_NAME .. ' ' .. AUTHOR_EMAIL .. ' v' .. GAME_VERSION, 0, VIRTUAL_HEIGHT - 15, VIRTUAL_WIDTH, 'right')
+    love.graphics.setColor(1, 1, 1, 1)
+    
+end
