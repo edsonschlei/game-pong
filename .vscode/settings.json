@@ -23,6 +23,8 @@
         "ball",
         "victoryFont",
         "winningPlayer",
-        "sounds"
+        "sounds",
+        "playerIA",
+        "drawAuthorAndVersion"
     ]
 }
